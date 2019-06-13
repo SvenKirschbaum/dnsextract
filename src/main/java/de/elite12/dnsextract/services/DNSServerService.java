@@ -62,7 +62,7 @@ public class DNSServerService {
                 ans.getHeader().setAncount((short) 1);
                 ans.setQuestions(pkg.getQuestions());
                 ans.setAnswers(new DNSPackage.ResourceRecord[]{
-                        new TXTRecord(key)
+                        new TXTRecord(key+".u."+appProperties.getBasedomain())
                 });
                 logger.debug("Answer: " + ans.toString());
                 byte[] rawpkg = parser.packagetobyte(ans);
