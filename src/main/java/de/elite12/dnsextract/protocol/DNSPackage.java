@@ -64,6 +64,7 @@ public class DNSPackage {
     @ToString
     public static class ResourceRecord {
         String[] labels;
+        boolean labelpointer = false;
         short type;
         short _class;
         int ttl;

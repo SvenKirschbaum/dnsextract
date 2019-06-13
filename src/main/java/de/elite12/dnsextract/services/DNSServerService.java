@@ -58,9 +58,11 @@ public class DNSServerService {
                 ans.getHeader().setQr(true);
                 ans.getHeader().setRd(true);
                 ans.getHeader().setRa(true);
+                ans.getHeader().setQdcount((short) 1);
                 ans.getHeader().setAncount((short) 1);
-                ans.setAuthority(new DNSPackage.ResourceRecord[]{
-                        new TXTRecord(subdomain[0] + "." + filename + ".start." + appProperties.getBasedomain(),key)
+                ans.setQuestions(pkg.getQuestions());
+                ans.setAnswers(new DNSPackage.ResourceRecord[]{
+                        new TXTRecord(key)
                 });
                 logger.debug("Answer: " + ans.toString());
                 byte[] rawpkg = parser.packagetobyte(ans);
@@ -69,7 +71,11 @@ public class DNSServerService {
             }
 
             if(subdomain[subdomain.length-1].equalsIgnoreCase("u")) {
-                byte[] rawdata = hexStringToByteArray(subdomain[subdomain.length-4]);
+                StringBuilder datastring = new StringBuilder();
+                for(int i=0;i<subdomain.length-3;i++) {
+                    datastring.append(subdomain[i]);
+                }
+                byte[] rawdata = hexStringToByteArray(datastring.toString());
                 uploadService.addPart(subdomain[subdomain.length-2], Integer.valueOf(subdomain[subdomain.length-3]), rawdata);
 
                 DNSPackage ans = new DNSPackage();
@@ -77,9 +83,11 @@ public class DNSServerService {
                 ans.getHeader().setQr(true);
                 ans.getHeader().setRd(true);
                 ans.getHeader().setRa(true);
+                ans.getHeader().setQdcount((short) 1);
                 ans.getHeader().setAncount((short) 1);
-                ans.setAuthority(new DNSPackage.ResourceRecord[]{
-                        new TXTRecord(subdomain[subdomain.length-3] + "." + subdomain[subdomain.length-2] + ".u." + appProperties.getBasedomain(),"ok")
+                ans.setQuestions(pkg.getQuestions());
+                ans.setAnswers(new DNSPackage.ResourceRecord[]{
+                        new TXTRecord("ok")
                 });
                 logger.debug("Answer: " + ans.toString());
                 byte[] rawpkg = parser.packagetobyte(ans);

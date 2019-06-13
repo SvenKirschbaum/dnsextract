@@ -162,7 +162,11 @@ public class DNSPackageParser {
 
     private void writeRRs(ByteArrayOutputStream stream, DNSPackage.ResourceRecord[] rrs) {
         for(DNSPackage.ResourceRecord r:rrs) {
-            this.writeLabels(stream, r.getLabels());
+            if(!r.labelpointer) this.writeLabels(stream, r.getLabels());
+            else {
+                stream.write(0b11000000);
+                stream.write((byte)12);
+            }
 
             stream.write(r.getType() >> 8 & 0xFF);
             stream.write(r.getType() & 0xFF);
