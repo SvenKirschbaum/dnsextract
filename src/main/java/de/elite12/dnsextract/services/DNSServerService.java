@@ -45,6 +45,9 @@ public class DNSServerService {
             if(subdomain.length == 0) return null;
 
             if(subdomain[subdomain.length-1].equalsIgnoreCase("start")) {
+
+                if(subdomain.length<3) return null;
+
                 StringBuilder filename = new StringBuilder();
                 for(int i=0;i<subdomain.length-2;i++) {
                     filename.append(subdomain[i+1]);
@@ -71,6 +74,9 @@ public class DNSServerService {
             }
 
             if(subdomain[subdomain.length-1].equalsIgnoreCase("u")) {
+
+                if(subdomain.length<4) return null;
+
                 StringBuilder datastring = new StringBuilder();
                 for(int i=0;i<subdomain.length-3;i++) {
                     datastring.append(subdomain[i]);
