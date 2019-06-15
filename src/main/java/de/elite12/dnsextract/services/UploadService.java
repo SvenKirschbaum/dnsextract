@@ -1,57 +1,62 @@
 package de.elite12.dnsextract.services;
 
+import de.elite12.dnsextract.data.Upload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @Service
 public class UploadService {
     private static Logger logger = LoggerFactory.getLogger(UploadService.class);
 
-    private Map<String, ByteBuffer> uploads = new HashMap<>();
-    private Map<String, String> filenames = new HashMap<>();
+    private Map<String, Upload> uploads = new HashMap<>();
 
     public String startUpload(String name, int size) {
         //TODO timeouts
         logger.info("Started Upload: " + name + ", size: "+size);
         String key = randomKey();
-
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        uploads.put(key,buffer);
-        filenames.put(key,name);
+        Upload tmp = new Upload(name,size);
+        uploads.put(key,tmp);
 
         return key;
     }
 
-    public void addPart(String key, int chunk, byte[] data) {
+    public String addPart(String key, int chunk, byte[] data) {
         logger.info("Part for key: "+key+", chunk: "+chunk + ", data: " + Arrays.toString(data));
-        //TODO take care of order
-        ByteBuffer buffer = uploads.get(key);
 
-        //TODO take care of error
-        if(buffer == null) return;
+        if(!uploads.containsKey(key)) return "Invalid Key";
 
-        buffer.put(data);
+        Upload upload = uploads.get(key);
 
-        if(buffer.remaining() <= 0) {
-            uploads.remove(key);
-            try {
-                FileOutputStream  writer = new FileOutputStream("output/"+filenames.remove(key));
-                writer.write(buffer.array());
-                writer.close();
-            } catch (IOException e) {
-                logger.error("Error writing File",e);
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (upload) {
+            if(upload.getParts().containsKey(chunk)) return "Duplicate Chunk";
+
+            upload.getParts().put(chunk,data);
+            upload.setCurrentsize(upload.getCurrentsize() + data.length);
+
+            if(upload.getCurrentsize() >= upload.getFullsize()) {
+                uploads.remove(key);
+                try {
+                    FileOutputStream  writer = new FileOutputStream("output/"+upload.getFilename());
+                    byte[][] fulldata = upload.getParts().entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(Map.Entry::getValue).toArray(byte[][]::new);
+                    for(byte[] e:fulldata) {
+                        writer.write(e);
+                    }
+                    writer.close();
+                    logger.info("Upload finished: " + key);
+                    return "finished";
+                } catch (IOException e) {
+                    logger.error("Error writing File",e);
+                }
             }
-            logger.info("Upload finished: " + key + ", data:" + Arrays.toString(buffer.array()));
+            return "ok";
         }
     }
 

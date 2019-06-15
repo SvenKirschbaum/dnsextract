@@ -30,7 +30,7 @@ public class DNSServerService {
     private AppProperties appProperties;
 
     @ServiceActivator(inputChannel = "udpIn", outputChannel = "udpOut")
-    public Message<byte[]> handeMessage(Message<byte[]> message) throws IOException {
+    public Message<byte[]> handeMessage(Message<byte[]> message) {
         try {
             logger.trace("Raw Query: " + Arrays.toString(message.getPayload()));
             DNSPackage pkg = parser.parsePackage(message.getPayload());
@@ -82,7 +82,7 @@ public class DNSServerService {
                     datastring.append(subdomain[i]);
                 }
                 byte[] rawdata = hexStringToByteArray(datastring.toString());
-                uploadService.addPart(subdomain[subdomain.length-2], Integer.valueOf(subdomain[subdomain.length-3]), rawdata);
+                String response = uploadService.addPart(subdomain[subdomain.length-2], Integer.valueOf(subdomain[subdomain.length-3]), rawdata);
 
                 DNSPackage ans = new DNSPackage();
                 ans.getHeader().setId(pkg.getHeader().getId());
@@ -93,7 +93,7 @@ public class DNSServerService {
                 ans.getHeader().setAncount((short) 1);
                 ans.setQuestions(pkg.getQuestions());
                 ans.setAnswers(new DNSPackage.ResourceRecord[]{
-                        new TXTRecord("ok")
+                        new TXTRecord(response)
                 });
                 logger.debug("Answer: " + ans.toString());
                 byte[] rawpkg = parser.packagetobyte(ans);
